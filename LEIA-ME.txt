@@ -1,20 +1,20 @@
-BMI - Banda Messias Instrumentos (app offline / PWA)
+BMI online (partilhado entre todos) + instalável no telemóvel
 
-PUBLICAR NO GITHUB PAGES
-1) Em github.com crie um repositório PÚBLICO (ex.: bmi-app).
-2) Extraia este zip no telemóvel/computador. Em "Add file > Upload files", envie TODOS os ficheiros
-   (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png). O GitHub não extrai zips sozinho.
-3) Clique em "Commit changes".
-4) Vá a Settings > Pages. Em "Build and deployment", escolha "Deploy from a branch", branch "main", pasta "/ (root)", e guarde.
-5) Após alguns minutos, o site fica em https://SEU-UTILIZADOR.github.io/bmi-app/
+Usa o Firebase (Google), que tem plano gratuito. Os nomes dos menus podem mudar: se algo não bater, siga a lógica.
 
-INSTALAR NO TELEMÓVEL
-Abra o link no Chrome (Android) ou Safari (iPhone) e use "Adicionar ao ecrã inicial" / "Instalar app".
-Depois da primeira abertura com internet, funciona sem internet.
+1) console.firebase.google.com > Adicionar projecto (pode desligar o Google Analytics).
+2) Authentication > Começar > activar "E-mail/palavra-passe". Em "Utilizadores", adicione cada pessoa (e-mail + palavra-passe).
+   Em Authentication > Definições > Domínios autorizados, adicione SEU-UTILIZADOR.github.io
+3) Firestore Database > Criar base de dados (modo de produção, escolha uma região).
+4) Firestore > separador "Regras": apague tudo, cole o conteúdo de firestore.rules e publique.
+5) Definições do projecto (roda dentada) > "As suas apps" > Web (</>) > registar a app > copie o firebaseConfig
+   e cole os valores no ficheiro firebase-config.js (apiKey, authDomain, projectId, appId).
+6) Administradores: em Authentication copie o UID do utilizador. Em Firestore, crie a colecção "admins" e um documento
+   com ID = esse UID (pode ter qualquer campo, ex.: admin = true). Quem tem esse documento é administrador.
+7) GitHub: no repositório, substitua os ficheiros por estes (Add file > Upload files) e faça Commit. O GitHub Pages actualiza em minutos.
+8) Telemóvel: abra o link, entre com e-mail e palavra-passe e use "Adicionar ao ecrã inicial".
+   Funciona offline depois da 1ª abertura com internet; as alterações sincronizam quando voltar a ligação.
 
-PRIMEIRO USO
-Toque na etiqueta do canto superior direito para definir o PIN de administrador.
-Para juntar dados dos polos: cada polo usa Painel > Exportar dados e envia o ficheiro; o administrador usa Importar e juntar.
-
-APK (opcional): com o link https pode gerar-se um pacote Android (ex.: PWABuilder).
-Nota: os dados ficam em cada aparelho. Se limpar os dados do navegador, perde-os: exporte cópias com regularidade.
+Regras (firestore.rules): só administradores criam/alteram/apagam instrumentos; só administradores apagam histórico e transportes;
+funcionários só acrescentam ao histórico. Estas regras são aplicadas no servidor.
+Nota: os dados do site antigo (claude.ai) e do app offline não passam para esta base; começa vazia.
