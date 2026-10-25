@@ -1,0 +1,20 @@
+BMI - Banda Messias Instrumentos (app offline / PWA)
+
+PUBLICAR NO GITHUB PAGES
+1) Em github.com crie um repositório PÚBLICO (ex.: bmi-app).
+2) Extraia este zip no telemóvel/computador. Em "Add file > Upload files", envie TODOS os ficheiros
+   (index.html, manifest.webmanifest, sw.js, icon-192.png, icon-512.png). O GitHub não extrai zips sozinho.
+3) Clique em "Commit changes".
+4) Vá a Settings > Pages. Em "Build and deployment", escolha "Deploy from a branch", branch "main", pasta "/ (root)", e guarde.
+5) Após alguns minutos, o site fica em https://SEU-UTILIZADOR.github.io/bmi-app/
+
+INSTALAR NO TELEMÓVEL
+Abra o link no Chrome (Android) ou Safari (iPhone) e use "Adicionar ao ecrã inicial" / "Instalar app".
+Depois da primeira abertura com internet, funciona sem internet.
+
+PRIMEIRO USO
+Toque na etiqueta do canto superior direito para definir o PIN de administrador.
+Para juntar dados dos polos: cada polo usa Painel > Exportar dados e envia o ficheiro; o administrador usa Importar e juntar.
+
+APK (opcional): com o link https pode gerar-se um pacote Android (ex.: PWABuilder).
+Nota: os dados ficam em cada aparelho. Se limpar os dados do navegador, perde-os: exporte cópias com regularidade.
