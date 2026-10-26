@@ -1,20 +1,17 @@
-BMI online (partilhado entre todos) + instalável no telemóvel
+BMI online com Supabase (partilhado) + instalável no telemóvel e com modo offline
 
-Usa o Firebase (Google), que tem plano gratuito. Os nomes dos menus podem mudar: se algo não bater, siga a lógica.
+Os nomes dos menus podem mudar: se algo não bater, siga a lógica.
+1) supabase.com > New project (guarde a palavra-passe da base de dados; escolha uma região).
+2) SQL Editor > New query > cole o conteúdo de setup.sql > Run.
+3) Authentication > Users > Add user (e-mail + palavra-passe; marque "Auto Confirm"). Crie uma conta por pessoa.
+   Em Authentication > Sign In / Providers, DESACTIVE o registo livre de novos utilizadores ("Allow new users to sign up").
+   Depois, no SQL Editor, execute as 2 linhas comentadas no fim do setup.sql: dar acesso a todos e tornar administradores os escolhidos.
+4) Project Settings > API (ou "Data API"): copie o Project URL e a chave "anon public" para o ficheiro supabase-config.js.
+5) GitHub: substitua os ficheiros do repositório por estes (Add file > Upload files) e faça Commit. O Pages actualiza em minutos.
+6) Telemóvel: abra o link, entre com e-mail e palavra-passe, e use "Adicionar ao ecrã inicial".
 
-1) console.firebase.google.com > Adicionar projecto (pode desligar o Google Analytics).
-2) Authentication > Começar > activar "E-mail/palavra-passe". Em "Utilizadores", adicione cada pessoa (e-mail + palavra-passe).
-   Em Authentication > Definições > Domínios autorizados, adicione SEU-UTILIZADOR.github.io
-3) Firestore Database > Criar base de dados (modo de produção, escolha uma região).
-4) Firestore > separador "Regras": apague tudo, cole o conteúdo de firestore.rules e publique.
-5) Definições do projecto (roda dentada) > "As suas apps" > Web (</>) > registar a app > copie o firebaseConfig
-   e cole os valores no ficheiro firebase-config.js (apiKey, authDomain, projectId, appId).
-6) Administradores: em Authentication copie o UID do utilizador. Em Firestore, crie a colecção "admins" e um documento
-   com ID = esse UID (pode ter qualquer campo, ex.: admin = true). Quem tem esse documento é administrador.
-7) GitHub: no repositório, substitua os ficheiros por estes (Add file > Upload files) e faça Commit. O GitHub Pages actualiza em minutos.
-8) Telemóvel: abra o link, entre com e-mail e palavra-passe e use "Adicionar ao ecrã inicial".
-   Funciona offline depois da 1ª abertura com internet; as alterações sincronizam quando voltar a ligação.
-
-Regras (firestore.rules): só administradores criam/alteram/apagam instrumentos; só administradores apagam histórico e transportes;
-funcionários só acrescentam ao histórico. Estas regras são aplicadas no servidor.
-Nota: os dados do site antigo (claude.ai) e do app offline não passam para esta base; começa vazia.
+Offline: o app guarda uma cópia no aparelho e uma fila de alterações; envia tudo quando houver internet (vence a última alteração).
+A etiqueta do topo mostra online/offline e quantas alterações faltam enviar. Antes de sair da conta, ligue-se à internet.
+Segurança (aplicada no servidor): só administradores criam/alteram/apagam instrumentos e apagam histórico e transportes;
+funcionários mudam estados, registam manutenções e transportes e só acrescentam ao histórico.
+Nota: a base começa vazia. As fotos das faturas ficam dentro dos registos; muitas fotos tornam a primeira carga mais lenta.

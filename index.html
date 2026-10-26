@@ -67,7 +67,7 @@ label{font-size:12px;color:var(--mute);display:block;margin:10px 0 4px}
 <nav id="nav"></nav>
 <div id="modal"><div id="mb"></div></div>
 <div id="toast"></div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script><script src="firebase-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="supabase-config.js"></script>
 <script>
 const P=["Bengo","Benguela","Bié","Cabinda","Cuando","Cubango","Cuanza Norte","Cuanza Sul","Cunene","Huambo","Huíla","Icolo e Bengo","Luanda","Lunda Norte","Lunda Sul","Malanje","Moxico","Moxico Leste","Namibe","Uíge","Zaire"];
 const TIPOS=["Trompete","Trombone","Tuba","Saxofone","Clarinete","Flauta","Tambor","Caixa","Bombo","Pratos","Eufónio","Corneta","Bombardino","Lira"];
@@ -214,21 +214,43 @@ async function csv(){const R=bal(),h="Provincia,Polo,Novos,Danificados,Manutenca
 
 function localDb(){let D={};try{D=JSON.parse(localStorage.getItem("bmi")||"{}")}catch(e){}const L={},sv=()=>{try{localStorage.setItem("bmi",JSON.stringify(D))}catch(e){toast("Armazenamento cheio: exporte os dados e liberte espaço")}},fire=n=>(L[n]||[]).forEach(f=>f()),snap=n=>{const ds=Object.entries(D[n]||{}).map(([id,v])=>({id,exists:true,data:()=>v}));return{docs:ds,docChanges:()=>[]}};
 return{dump:()=>D,merge:o=>{let a=0;for(const n in o){D[n]=D[n]||{};for(const id in o[n]){const x=o[n][id],y=D[n][id];if(!y||(n==="estados"&&(x.atualizado||"")>(y.atualizado||""))||(n==="transportes"&&x.estado!=="saiu"&&y.estado==="saiu")||(n==="manutencoes"&&x.estado==="concluida"&&y.estado==="aberta")){D[n][id]=x;a++}}fire(n)}sv();return a},collection:n=>({doc:id=>({set:async v=>{(D[n]=D[n]||{})[id]=v;sv();fire(n)},update:async v=>{D[n][id]={...D[n][id],...v};sv();fire(n)},delete:async()=>{delete D[n][id];sv();fire(n)}}),onSnapshot:f=>{const g=()=>f(snap(n));(L[n]=L[n]||[]).push(g);g();return()=>{}}})}}
-function gdb(){const f=firebase.firestore();return{collection:n=>{const c=f.collection(n);return{doc:id=>{const d=c.doc(id);return{set:v=>d.set(v),update:v=>d.update(v),delete:()=>d.delete()}},onSnapshot:(a,b)=>c.onSnapshot(a,b)}}}}
+const xidb={o:()=>new Promise((r,j)=>{const q=indexedDB.open("bmi",1);q.onupgradeneeded=()=>q.result.createObjectStore("k");q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)}),async get(k){try{const d=await this.o();return await new Promise(r=>{const q=d.transaction("k").objectStore("k").get(k);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})}catch(e){return null}},async set(k,v){try{const d=await this.o();return await new Promise(r=>{const t=d.transaction("k","readwrite");t.objectStore("k").put(v,k);t.oncomplete=()=>r();t.onerror=()=>r()})}catch(e){}}};
+const MIR={},XQ=[],XL={};let SB=null,fl=false;
+const xnet=m=>!navigator.onLine||/fetch|network|Failed|timeout/i.test(m||"");
+function updSt(){const e=$("#st");if(e)e.textContent=stTxt()}
+function stTxt(){return(navigator.onLine?"online":"offline")+(S.admin?" · admin":" · funcionário")+(XQ.length?" · "+XQ.length+" por enviar":"")}
+async function xsave(){await xidb.set("m",{M:MIR,Q:XQ});updSt()}
+function xap(M,o){const c=M[o.col]=M[o.col]||{};if(o.t==="set")c[o.id]=o.d;else if(o.t==="upd")c[o.id]={...c[o.id],...o.d};else delete c[o.id]}
+function emit(col,l){const M=MIR[col]||{},prev=l.prev,ch=[];for(const id in M)if(!prev||!(id in prev))ch.push({type:"added",doc:{id,data:()=>M[id]}});l.prev={...M};l.f({docs:Object.keys(M).map(id=>({id,data:()=>M[id]})),docChanges:()=>ch})}
+function xfire(col){(XL[col]||[]).forEach(l=>emit(col,l))}
+async function wr(o){xap(MIR,o);XQ.push(o);await xsave();xfire(o.col);flush()}
+function sdb(){return{collection:n=>({doc:id=>({set:v=>wr({t:"set",col:n,id,d:v}),update:v=>wr({t:"upd",col:n,id,d:v}),delete:()=>wr({t:"del",col:n,id})}),onSnapshot:f=>{const l={f,prev:null};(XL[n]=XL[n]||[]).push(l);emit(n,l)}})}}
+async function flush(){if(fl||!SB||!navigator.onLine)return;fl=true;
+ try{while(XQ.length){const o=XQ[0];let r;if(o.t==="set")r=await SB.from("docs").upsert({col:o.col,id:o.id,data:o.d});else if(o.t==="upd")r=await SB.rpc("docs_merge",{c:o.col,i:o.id,d:o.d});else r=await SB.from("docs").delete().eq("col",o.col).eq("id",o.id);
+  if(r.error){if(xnet(r.error.message))break;toast("Recusado pelo servidor: "+r.error.message);XQ.shift()}else XQ.shift();await xsave()}}catch(e){}
+ fl=false;if(!XQ.length)await pullAll()}
+async function pullAll(){if(!SB||!navigator.onLine)return;const N={};let from=0;
+ for(;;){const r=await SB.from("docs").select("col,id,data").order("col").order("id").range(from,from+99);if(r.error)return;r.data.forEach(x=>(N[x.col]=N[x.col]||{})[x.id]=x.data);if(r.data.length<100)break;from+=100}
+ for(const o of XQ)xap(N,o);const cols=new Set([...Object.keys(MIR),...Object.keys(N)]);for(const c of Object.keys(MIR))delete MIR[c];Object.assign(MIR,N);await xsave();cols.forEach(xfire)}
 const logoSrc=()=>document.querySelector(".brand img").src;
 function lgBox(h){const l=$("#lg");l.innerHTML='<div class="bx"><img src="'+logoSrc()+'" width="72" height="72" alt="BMI"><h2 style="text-align:center;margin:0 0 4px">BMI</h2><p style="text-align:center;color:var(--mute);margin:0 0 8px;font-size:13px">Banda Messias Instrumentos</p>'+h+'</div>';l.style.display="flex"}
 function showLogin(m){lgBox('<label>E-mail</label><input id="lg_e" type="email" autocomplete="username"><label>Palavra-passe</label><input id="lg_p" type="password" autocomplete="current-password">'+(m?'<p style="color:var(--bad);font-size:13px">'+esc(m)+'</p>':'')+'<div class="row" style="margin-top:14px"><button class="btn o" style="width:100%" onclick="doLogin()">Entrar</button></div>')}
-function doLogin(){const e=$("#lg_e").value.trim(),p=$("#lg_p").value;if(!e||!p)return;firebase.auth().signInWithEmailAndPassword(e,p).catch(x=>showLogin(/network/.test(x.code)?"Sem ligação à internet.":"E-mail ou palavra-passe incorrectos."))}
-function logout(){modal('<h2>Sair da conta?</h2>'+btns("Sair","doOut()"))}
-function doOut(){firebase.auth().signOut().then(()=>location.reload())}
-async function boot(){render();const C=window.FIREBASE_CONFIG;
- if(typeof firebase==="undefined"||!C||!C.apiKey||/COLE/.test(C.apiKey)){lgBox('<p>Falta configurar o Firebase. Edite o ficheiro <b>firebase-config.js</b> com os dados do seu projecto (ver LEIA-ME.txt).</p>');return}
- firebase.initializeApp(C);const f=firebase.firestore();try{await f.enablePersistence({synchronizeTabs:true})}catch(e){}
+async function doLogin(){const e=$("#lg_e").value.trim(),p=$("#lg_p").value;if(!e||!p)return;const r=await SB.auth.signInWithPassword({email:e,password:p});if(r.error)showLogin(xnet(r.error.message)?"Sem ligação à internet.":"E-mail ou palavra-passe incorrectos.")}
+function logout(){modal('<h2>Sair da conta?</h2>'+(XQ.length?'<p style="color:var(--bad)">Há '+XQ.length+' alteração(ões) por enviar. Ligue-se à internet antes de sair, ou poderá perdê-las.</p>':'')+btns("Sair","doOut()"))}
+async function doOut(){await xidb.set("m",null);try{localStorage.removeItem("bmi_uid")}catch(e){}await SB.auth.signOut();location.reload()}
+async function boot(){render();const C=window.SUPABASE_CONFIG;
+ if(typeof supabase==="undefined"||!C||!C.url||/COLE/.test(C.url)){lgBox('<p>Falta configurar o Supabase. Edite o ficheiro <b>supabase-config.js</b> com os dados do seu projecto (ver LEIA-ME.txt).</p>');return}
+ SB=supabase.createClient(C.url,C.anonKey);const m=await xidb.get("m");if(m){Object.assign(MIR,m.M||{});XQ.push(...(m.Q||[]))}
  let started=false;
- firebase.auth().onAuthStateChanged(async u=>{if(!u){$("#lg").style.display="flex";showLogin();return}
-  const k="bmi_adm_"+u.uid;try{S.admin=(await f.collection("admins").doc(u.uid).get()).exists;try{localStorage.setItem(k,S.admin?"1":"0")}catch(e){}}catch(e){try{S.admin=localStorage.getItem(k)==="1"}catch(x){S.admin=false}}
-  $("#lg").style.display="none";if(started)return;started=true;
-  const db=gdb();S.db=db;S.est={};S.base=[];S.pen=[];let first=true;
+ const go=async u=>{if(!u){$("#lg").style.display="flex";showLogin();return}if(started)return;started=true;
+  const k="bmi_adm_"+u.id;let ok=true;
+  try{const r=await SB.from("perfis").select("admin").eq("uid",u.id).maybeSingle();if(r.error)throw r.error;if(!r.data){ok=false}else{S.admin=!!r.data.admin;try{localStorage.setItem(k,S.admin?"1":"0");localStorage.setItem("bmi_uid",u.id)}catch(e){}}}catch(e){try{S.admin=localStorage.getItem(k)==="1"}catch(x){S.admin=false}}
+  if(!ok){started=false;await SB.auth.signOut();showLogin("Esta conta não tem acesso. Peça ao administrador.");return}
+  $("#lg").style.display="none";startApp()};
+ const g=await SB.auth.getSession();let u=g.data&&g.data.session&&g.data.session.user;if(!u&&!navigator.onLine){const c=localStorage.getItem("bmi_uid");if(c)u={id:c}}
+ go(u);SB.auth.onAuthStateChange((ev,s)=>{if(ev==="SIGNED_IN"&&s&&!started)go(s.user);if(ev==="SIGNED_OUT"&&started)location.reload()})}
+function startApp(){S.db=sdb();S.est={};S.base=[];S.pen=[];
+ const db=S.db;let first=true;
  db.collection("polos").onSnapshot(s=>{S.polos=s.docs.map(d=>({id:d.id,...d.data()}));$("#st").textContent=stTxt();if(!$("#modal").classList.contains("on"))render()},e=>$("#st").textContent="erro");
  db.collection("instrumentos").onSnapshot(s=>{S.base=s.docs.map(d=>({id:d.id,...d.data()}));mergeI();redraw()});db.collection("estados").onSnapshot(s=>{S.est={};s.docs.forEach(d=>S.est[d.id]=d.data());mergeI();redraw()});let pf=true;db.collection("pendentes").onSnapshot(s=>{const n=S.pen.length;S.pen=s.docs.map(d=>({id:d.id,...d.data()}));if(!pf&&S.admin&&S.pen.length>n)toast("📥 Novo instrumento aguarda a sua aprovação");pf=false;redraw()});
  db.collection("historico").onSnapshot(s=>{S.hist=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>b.ts.localeCompare(a.ts));
@@ -238,13 +260,16 @@ async function boot(){render();const C=window.FIREBASE_CONFIG;
  db.collection("manutencoes").onSnapshot(s=>{S.man=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||"").localeCompare(a.ts||""));rf()});
  db.collection("transportes").onSnapshot(s=>{S.tr=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||"").localeCompare(a.ts||""));rf()});
 
- render()})}
+ render();
+ SB.channel("docs").on("postgres_changes",{event:"*",schema:"public",table:"docs"},async p=>{const r=(p.new&&p.new.col)?p.new:p.old;if(!r||!r.col)return;const c=MIR[r.col]=MIR[r.col]||{};
+  if(p.eventType==="DELETE")delete c[r.id];else{const q=await SB.from("docs").select("data").eq("col",r.col).eq("id",r.id).maybeSingle();if(q.data)c[r.id]=q.data.data}
+  await xsave();xfire(r.col)}).subscribe();
+ addEventListener("online",()=>{updSt();flush()});addEventListener("offline",updSt);document.addEventListener("visibilitychange",()=>{if(!document.hidden)flush()});flush()}
 
 window.addEventListener("error",e=>{const v=document.getElementById("v");if(v&&!S.db)v.innerHTML='<div class="card empty">Erro ao iniciar: '+esc(e.message)+'</div>'});
 
 const dlBlob=(d,n,t)=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([d],{type:t}));a.download=n;document.body.appendChild(a);a.click();a.remove()};
 const isLoc=()=>!!(S.db&&S.db.dump);
-function stTxt(){return"online"+(S.admin?" · admin":" · funcionário")}
 async function sha(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode("bmi:"+t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("")}
 const gp=()=>{try{return localStorage.getItem("bmi_pin")}catch(e){return null}};
 function setAdm(v){S.admin=v;$("#st").textContent=stTxt();closeM();render()}
