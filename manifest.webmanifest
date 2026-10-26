@@ -1,0 +1,16 @@
+{
+  "name": "BMI · Banda Messias Instrumentos",
+  "short_name": "BMI",
+  "description": "Gestão de instrumentos da Banda Messias",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B2A6F",
+  "theme_color": "#0B2A6F",
+  "lang": "pt-AO",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"}
+  ]
+}
